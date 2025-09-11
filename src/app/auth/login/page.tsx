@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import loginImage from "../../../../public/images/login.jpeg";
 import logoImage from "../../../../public/images/logo.jpeg";
+import { useApi } from "@/hooks/useApi";
+import { User } from "@/types";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -21,9 +23,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  const { post, loading } = useApi();
 
   const {
     register,
@@ -34,36 +37,25 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
     setError("");
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const result = await post<{ token: string; user: User }>(
+        "/auth/login",
+        data
+      );
 
-      const response = await fetch(`${apiUrl}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Login failed");
+      if (result?.token && result?.user) {
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("user", JSON.stringify(result.user));
+        router.push("/dashboard");
+      } else {
+        throw new Error("Login failed");
       }
-
-      localStorage.setItem("token", result.token);
-      localStorage.setItem("user", JSON.stringify(result.user));
-
-      router.push("/dashboard");
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred."
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -189,9 +181,9 @@ export default function LoginPage() {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={loading}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                {isLoading ? (
+                {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                   "Login"

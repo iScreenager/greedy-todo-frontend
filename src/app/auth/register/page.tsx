@@ -10,22 +10,23 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import loginImage from "../../../../public/images/login.jpeg";
 import logoImage from "../../../../public/images/logo.jpeg";
+import { useApi } from "@/hooks/useApi";
+import { User } from "@/types";
 
-const registerSchema = z
-  .object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Please enter a valid email"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-  })
-  
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  const { post, loading } = useApi();
 
   const {
     register,
@@ -36,42 +37,27 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true);
-    setError("");
-
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL;
-
-      const response = await fetch(`${apiUrl}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const result = await post<{ token: string; user: User }>(
+        "/auth/register",
+        {
           name: data.name,
           email: data.email,
           password: data.password,
-        }),
-      });
+        }
+      );
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Registration failed");
-        return;
+      if (result?.token && result?.user) {
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("user", JSON.stringify(result.user));
+        router.push("/dashboard");
+      } else {
+        throw new Error("Registration failed");
       }
-
-      localStorage.setItem("token", result.token);
-      localStorage.setItem("user", JSON.stringify(result.user));
-
-      router.push("/dashboard");
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred."
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -104,8 +90,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => {
-                const apiUrl =
-                  process.env.NEXT_PUBLIC_API_URL ;
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL;
                 window.location.href = `${apiUrl}/auth/google`;
               }}
               className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
@@ -223,9 +208,9 @@ export default function RegisterPage() {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={loading}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                {isLoading ? (
+                {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                   "Get Started"

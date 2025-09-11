@@ -9,9 +9,11 @@ export default function GoogleCallback() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
+    const user = params.get("user") ?? "";
 
     if (token) {
       localStorage.setItem("token", token);
+      localStorage.setItem("user", decodeURIComponent(user));
 
       window.history.replaceState({}, document.title, "/dashboard");
 
