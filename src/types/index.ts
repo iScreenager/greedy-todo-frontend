@@ -7,6 +7,7 @@ export interface User {
   email: string;
   role: UserRole;
   createdAt: number;
+  lastLoginTime: number;
   updatedAt: string;
   photo: string;
   authProvider: string;
@@ -21,4 +22,5 @@ export interface Task {
   dueTime: string;
   createdAt: number;
   updatedAt: number;
+  status?: "expired" | "4hr";
 }

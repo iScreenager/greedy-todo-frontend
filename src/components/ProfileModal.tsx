@@ -28,7 +28,6 @@ export default function ProfileModal({
 
   const handleUpdateProfile = async () => {
     try {
- 
       const updatedUserProfile = await patch<{ user: User; token: string }>(
         "/user",
         {

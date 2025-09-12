@@ -55,12 +55,12 @@ export default function Sidebar({
 
   return (
     <div
-      className={` ${isSuperUser ? "bg-gray-900 text-white" : "bg-white text-black"}  h-screen fixed left-0 top-0 z-30 px-4 pt-6 transition-transform duration-300  ${
+      className={` ${isSuperUser ? "bg-gray-900 text-white" : "bg-white text-black"}  h-full fixed left-0 top-0 z-30 px-4 pt-6 transition-transform duration-300  ${
         sidebarOpen ? "w-62" : "w-16"
       }`}>
       <div className="border-gray-700 flex justify-between">
         <h1 className={`font-bold text-xl ${!sidebarOpen && "hidden"}`}>
-          GREEDYGAME
+          GREEDY-TODO
         </h1>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}

@@ -1,5 +1,6 @@
 "use client";
 
+import { User } from "@/types";
 import React, { createContext, useContext, useState } from "react";
 
 type TaskCountContextType = {
@@ -11,6 +12,8 @@ type TaskCountContextType = {
   setCompletedCount: (count: number) => void;
   searchedText: string;
   setSearchedText: (v: string) => void;
+  currentUser: User | null;
+  setCurrentUser: (user: User | null) => void;
 };
 
 const TaskCountContext = createContext<TaskCountContextType | undefined>(
@@ -30,6 +33,7 @@ export const TaskCountProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [upcomingCount, setUpcomingCount] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
@@ -46,6 +50,8 @@ export const TaskCountProvider = ({
         setCompletedCount,
         searchedText,
         setSearchedText,
+        currentUser,
+        setCurrentUser,
       }}>
       {children}
     </TaskCountContext.Provider>

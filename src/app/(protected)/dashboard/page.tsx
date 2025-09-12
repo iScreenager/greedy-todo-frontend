@@ -37,6 +37,7 @@ export default function Dashboard() {
     upcomingCount,
     completedCount,
     searchedText,
+    currentUser,
   } = useTaskCount();
   const { get, post, put, remove, loading } = useApi();
 
@@ -109,11 +110,9 @@ export default function Dashboard() {
   }, [tasks, setTotalCount, setUpcomingCount, setCompletedCount]);
 
   const getUserDetail = () => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      const user = JSON.parse(userData);
-      setFirstName(user.name.split(" ")[0]);
-      setLastLogin(user.lastLoginTime);
+    if (currentUser) {
+      setFirstName(currentUser.name.split(" ")[0]);
+      setLastLogin(currentUser.lastLoginTime);
     }
   };
 
@@ -136,9 +135,8 @@ export default function Dashboard() {
   };
 
   if (loading) return <Loading />;
-
   return (
-    <div className="min-h-screen overflow-hidden p-4 md:p-6">
+    <div className="h-full overflow-hidden p-4 md:p-6 ">
       <div className="flex flex-col md:flex-row items-center justify-between mb-6 md:mb-8">
         <h1 className="text-base md:text-lg lg:text-3xl font-semibold text-gray-800">
           Hello, {firstName}
@@ -175,7 +173,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="h-[55vh] bg-white rounded-lg shadow-sm border flex flex-col">
+      <div className=" bg-white rounded-lg shadow-sm border flex flex-col">
         <div className="p-4 md:p-6 border-b flex justify-between items-center">
           <h2 className="text-sm md:text-xl font-semibold text-gray-600">
             All Tasks
@@ -189,7 +187,7 @@ export default function Dashboard() {
         </div>
 
         <div className="flex-1 overflow-hidden">
-          <div className="max-h-[45vh] overflow-y-auto">
+          <div className="h-[45vh] overflow-y-auto">
             <table className="w-full table-fixed border-collapse">
               <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
@@ -218,7 +216,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
 
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200 ">
                 {filterTasks.length === 0 ? (
                   <tr>
                     <td

@@ -6,6 +6,7 @@ import { User, UserRole } from "@/types";
 import { useTaskCount } from "@/contexts/TaskCountContext";
 import { Loading } from "@/components/Loading";
 import { useApi } from "@/hooks/useApi";
+import socket from "@/lib/socket";
 
 const rolePriority: Record<UserRole, number> = {
   superuser: 1,
@@ -14,50 +15,27 @@ const rolePriority: Record<UserRole, number> = {
 
 export default function UsersPage() {
   const { searchedText } = useTaskCount();
-  const { get, patch, loading } = useApi();
+  const { get, patch } = useApi();
 
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [localUser, setLocalUser] = useState<User | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
 
-  
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) setLocalUser(JSON.parse(storedUser));
-    } catch (err) {
-      console.error("Failed to parse local user:", err);
-    }
-  }, []);
-
-  const getAllUsers = useCallback(async () => {
-    try {
-      const data = await get<User[]>("/user");
-      if (data) {
-        setUsers(data);
-        setFilteredUsers(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch all users:", err);
-    }
-  }, []);
-
-  useEffect(() => {
-    getAllUsers();
-  }, [getAllUsers]);
-
-  const handleToggleUserStatus = async (user: User) => {
+  const handleToggleUserStatus = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    user: User
+  ) => {
+    e.preventDefault();
     if (user.id === localUser?.id) return;
 
     try {
-      const updatedUser = await patch(`/user/${user.id}`);
-      if (updatedUser) getAllUsers();
+      await patch<User>(`/user/${user.id}`);
     } catch (err) {
       console.error("Failed to update user role:", err);
     }
   };
-
 
   const handleSortByRole = () => {
     if (!users) return;
@@ -69,6 +47,48 @@ export default function UsersPage() {
     setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
   };
 
+  const getAllUsers = useCallback(async () => {
+    setPageLoading(true);
+    try {
+      const data = await get<User[]>("/user");
+      if (data) {
+        setUsers(data);
+        setFilteredUsers(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch all users:", err);
+    } finally {
+      setPageLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) setLocalUser(JSON.parse(storedUser));
+    } catch (err) {
+      console.error("Failed to parse local user:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    getAllUsers();
+  }, [getAllUsers]);
+
+  useEffect(() => {
+    socket.on("userRoleUpdated", (data: User) => {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === data?.id ? { ...u, role: data?.role } : u))
+      );
+      setFilteredUsers((prev) =>
+        prev.map((u) => (u.id === data?.id ? { ...u, role: data?.role } : u))
+      );
+    });
+
+    return () => {
+      socket.off("userRoleUpdated");
+    };
+  }, [localUser]);
 
   useEffect(() => {
     if (!searchedText.trim()) return setFilteredUsers(users);
@@ -79,7 +99,7 @@ export default function UsersPage() {
     );
   }, [searchedText, users]);
 
-  if (loading) return <Loading />;
+  if (pageLoading) return <Loading />;
 
   return (
     <div className="overflow-y-auto max-h-[90vh] mt-5">
@@ -153,7 +173,7 @@ export default function UsersPage() {
                       className="sr-only peer"
                       checked={user.role === "superuser"}
                       disabled={user.id === localUser?.id}
-                      onChange={() => handleToggleUserStatus(user)}
+                      onChange={(e) => handleToggleUserStatus(e, user)}
                     />
                     <div
                       className={`w-11 h-6 bg-gray-200 rounded-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300
