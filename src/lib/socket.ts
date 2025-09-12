@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const URL = process.env.BACKEND_URL;
+const URL = "https://greedy-todo-backend.onrender.com";
 export const socket = io(URL, {
   withCredentials: true,
   transports: ["websocket"],
