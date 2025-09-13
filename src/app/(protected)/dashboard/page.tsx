@@ -109,13 +109,6 @@ export default function Dashboard() {
     setCompletedCount(completed);
   }, [tasks, setTotalCount, setUpcomingCount, setCompletedCount]);
 
-  const getUserDetail = () => {
-    if (currentUser) {
-      setFirstName(currentUser.name.split(" ")[0]);
-      setLastLogin(currentUser.lastLoginTime);
-    }
-  };
-
   const getAllTasks = async () => {
     const data = await get<Task[]>("/task");
     if (data) {
@@ -125,9 +118,15 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    getUserDetail();
     getAllTasks();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      setFirstName(currentUser.name.split(" ")[0]);
+      setLastLogin(currentUser.lastLoginTime);
+    }
+  }, [currentUser]);
 
   const handleEditTaskDetailsModal = (task: Task) => {
     setSelectedTask(null);
@@ -142,7 +141,7 @@ export default function Dashboard() {
           Hello, {firstName}
         </h1>
         <p className="text-gray-600 text-xs md:text-sm lg:text-lg mt-1 md:mt-0">
-          Last Login time: {getFormattedDate(lastLoginTime)}
+          Last Login time: {getFormattedDate(lastLoginTime, false, true)}
         </p>
       </div>
 

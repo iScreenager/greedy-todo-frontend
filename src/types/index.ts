@@ -1,5 +1,6 @@
 export type TabType = "dashboard" | "calendar" | "todolist" | "users";
 export type UserRole = "normaluser" | "superuser";
+export type AuthProvider = "local" | "google" | "guest";
 
 export interface User {
   id: string;
@@ -10,7 +11,7 @@ export interface User {
   lastLoginTime: number;
   updatedAt: string;
   photo: string;
-  authProvider: string;
+  authProvider: AuthProvider;
 }
 
 export interface Task {

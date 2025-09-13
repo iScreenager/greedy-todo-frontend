@@ -20,8 +20,8 @@ export default function NotificationModal({
       onClose={onClose}
       title="Notifications"
       width="w-80">
-      {!notifications ? (
-        <p className="text-center text-gray-500">No notifications</p>
+      {notifications.length === 0 ? (
+        <p className="text-center text-gray-500 ">No notifications</p>
       ) : (
         <div className="space-y-4 h-80vh overflow-y-auto">
           {notifications.map((task,index) => (

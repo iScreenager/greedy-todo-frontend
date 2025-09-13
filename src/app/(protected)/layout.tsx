@@ -10,6 +10,7 @@ import NotificationModal from "@/components/NotificationModal";
 import { TabType, Task, User } from "@/types";
 import socket from "@/lib/socket";
 import { ToastNotification } from "@/components/ToastNotification";
+import { useTaskCount } from "@/contexts/TaskCountContext";
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
@@ -18,10 +19,10 @@ type DashboardLayoutProps = {
 export default function ProtectedLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathName = usePathname();
+  const { currentUser, setCurrentUser } = useTaskCount();
   const [activeTab, setActiveTab] = useState<TabType>(
     (pathName?.slice(1) as TabType) || "dashboard"
   );
-  const [userData, setUserData] = useState<User | null>(null);
   const [uiState, setUiState] = useState({
     sidebarOpen: false,
     showNotifications: false,
@@ -43,7 +44,7 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
 
     try {
       const user: User = JSON.parse(storedUser);
-      setUserData(user);
+      setCurrentUser(user);
 
       if (!socket.connected) socket.connect();
 
@@ -67,7 +68,7 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
 
     socket.on("userRoleUpdated", (updatedUser: User) => {
       if (updatedUser?.id === currentUser.id) {
-        setUserData(updatedUser);
+        setCurrentUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
 
         if (pathName === "/users" && updatedUser.role !== "superuser") {
@@ -80,7 +81,7 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
     return () => {
       socket.off("userRoleUpdated");
     };
-  }, [userData, router, pathName]);
+  }, [currentUser, router, pathName]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -128,7 +129,7 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
         setSidebarOpen={(open) =>
           setUiState((prev) => ({ ...prev, sidebarOpen: open }))
         }
-        userRole={userData?.role ?? "normaluser"}
+        userRole={currentUser?.role ?? "normaluser"}
       />
 
       <div
@@ -136,7 +137,7 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
           uiState.sidebarOpen ? "ml-64" : "ml-16"
         }`}>
         <Header
-          user={userData}
+          user={currentUser}
           onNotificationClick={() =>
             setUiState((prev) => ({ ...prev, showNotifications: true }))
           }
@@ -148,14 +149,14 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
         <main>{children}</main>
       </div>
 
-      {userData && (
+      {currentUser&& (
         <ProfileModal
           isOpen={uiState.showProfile}
           onClose={() =>
             setUiState((prev) => ({ ...prev, showProfile: false }))
           }
           onLogout={handleLogout}
-          user={userData}
+          user={currentUser}
         />
       )}
 
