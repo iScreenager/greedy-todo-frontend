@@ -89,13 +89,20 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
     const currentUser: User = JSON.parse(storedUser);
 
     socket.on("getNotification", (tasks: Task[]) => {
-      const newTasks = tasks.filter(
-        (task) => !notifications.some((n) => n._id === task._id)
-      );
+      const newTasks = tasks.filter((task) => {
+        const oldTask = notifications.find((n) => n._id === task._id);
+
+        if (!oldTask) return true;
+
+        if (oldTask.status !== task.status) return true;
+
+        return false;
+      });
+
       if (newTasks.length > 0) {
-        setToast(newTasks);
+        setToast((prev) => (prev ? [...prev, ...newTasks] : newTasks));
       }
-      setNotifications(tasks);
+      setNotifications(tasks); 
     });
 
     socket.emit("requestForNotification", currentUser.id);
@@ -111,7 +118,7 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
       socket.off("getNotification");
       clearInterval(interval);
     };
-  }, []);
+  }, [notifications]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
