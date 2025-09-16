@@ -23,5 +23,5 @@ export interface Task {
   dueTime: string;
   createdAt: number;
   updatedAt: number;
-  status?: "expired" | "4hr";
+  status?: "expired" | "4hr" | undefined;
 }

@@ -88,7 +88,7 @@ export default function UsersPage() {
     return () => {
       socket.off("userRoleUpdated");
     };
-  }, [localUser]);
+  }, []);
 
   useEffect(() => {
     if (!searchedText.trim()) return setFilteredUsers(users);

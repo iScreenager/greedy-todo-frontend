@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import Header from "@/components/Header";
@@ -19,10 +19,11 @@ type DashboardLayoutProps = {
 export default function ProtectedLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathName = usePathname();
-  const { currentUser, setCurrentUser } = useTaskCount();
+  const { currentUser, setCurrentUser, getAllTasks } = useTaskCount();
   const [activeTab, setActiveTab] = useState<TabType>(
     (pathName?.slice(1) as TabType) || "dashboard"
   );
+  const isFirstRender = useRef(true);
   const [uiState, setUiState] = useState({
     sidebarOpen: false,
     showNotifications: false,
@@ -62,11 +63,10 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
   }, [router]);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) return;
-    const currentUser: User = JSON.parse(storedUser);
-
     socket.on("userRoleUpdated", (updatedUser: User) => {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) return;
+      const currentUser: User = JSON.parse(storedUser);
       if (updatedUser?.id === currentUser.id) {
         setCurrentUser(updatedUser);
         localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -81,7 +81,7 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
     return () => {
       socket.off("userRoleUpdated");
     };
-  }, [currentUser, router, pathName]);
+  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -89,6 +89,11 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
     const currentUser: User = JSON.parse(storedUser);
 
     socket.on("getNotification", (tasks: Task[]) => {
+      if (isFirstRender.current) {
+        setNotifications(tasks);
+        isFirstRender.current = false;
+        return;
+      }
       const newTasks = tasks.filter((task) => {
         const oldTask = notifications.find((n) => n._id === task._id);
 
@@ -102,7 +107,8 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
       if (newTasks.length > 0) {
         setToast((prev) => (prev ? [...prev, ...newTasks] : newTasks));
       }
-      setNotifications(tasks); 
+      setNotifications(tasks);
+      getAllTasks();
     });
 
     socket.emit("requestForNotification", currentUser.id);
@@ -156,7 +162,7 @@ export default function ProtectedLayout({ children }: DashboardLayoutProps) {
         <main>{children}</main>
       </div>
 
-      {currentUser&& (
+      {currentUser && (
         <ProfileModal
           isOpen={uiState.showProfile}
           onClose={() =>

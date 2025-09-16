@@ -19,7 +19,6 @@ import { useApi } from "@/hooks/useApi";
 export default function Dashboard() {
   const [firstName, setFirstName] = useState<string>("");
   const [lastLoginTime, setLastLogin] = useState<number>(0);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [filterTasks, setFilterTasks] = useState<Task[]>([]);
   const [showAddTask, setShowAddTask] = useState<boolean>(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -38,8 +37,10 @@ export default function Dashboard() {
     completedCount,
     searchedText,
     currentUser,
+    allTasks,
+    getAllTasks,
   } = useTaskCount();
-  const { get, post, put, remove, loading } = useApi();
+  const { post, put, remove, loading } = useApi();
 
   const handleAddTask = async (task: Task) => {
     const result = await post("/task", task);
@@ -63,7 +64,7 @@ export default function Dashboard() {
 
     if (sortConfig?.key === key && sortConfig.order === "asc") order = "desc";
 
-    const sorted = [...tasks].sort((a, b) => {
+    const sorted = [...allTasks].sort((a, b) => {
       if (key === "status") {
         const statusA = getTaskStatus(a.dueDate, a.dueTime);
         const statusB = getTaskStatus(b.dueDate, b.dueTime);
@@ -89,36 +90,29 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (searchedText === "") return setFilterTasks(tasks);
+    if (searchedText === "") return setFilterTasks(allTasks);
 
     const lower = searchedText.trim().toLowerCase();
     setFilterTasks(
-      tasks.filter((task) => task.title.toLowerCase().includes(lower))
+      allTasks.filter((task) => task.title.toLowerCase().includes(lower))
     );
-  }, [searchedText, tasks]);
+  }, [searchedText, allTasks]);
 
   useEffect(() => {
-    const upcoming = tasks.filter(
+    const upcoming = allTasks.filter(
       (task) => getTaskStatus(task.dueDate, task.dueTime) === "Upcoming"
     ).length;
-    const completed = tasks.filter(
+    const completed = allTasks.filter(
       (task) => getTaskStatus(task.dueDate, task.dueTime) === "Completed"
     ).length;
-    setTotalCount(tasks.length);
+    setTotalCount(allTasks.length);
     setUpcomingCount(upcoming);
     setCompletedCount(completed);
-  }, [tasks, setTotalCount, setUpcomingCount, setCompletedCount]);
-
-  const getAllTasks = async () => {
-    const data = await get<Task[]>("/task");
-    if (data) {
-      setTasks(data);
-      setFilterTasks(data);
-    }
-  };
+  }, [allTasks, setTotalCount, setUpcomingCount, setCompletedCount]);
 
   useEffect(() => {
     getAllTasks();
+    setFilterTasks(allTasks);
   }, []);
 
   useEffect(() => {

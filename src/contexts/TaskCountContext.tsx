@@ -1,6 +1,7 @@
 "use client";
 
-import { User } from "@/types";
+import { useApi } from "@/hooks/useApi";
+import { Task, User } from "@/types";
 import React, { createContext, useContext, useState } from "react";
 
 type TaskCountContextType = {
@@ -14,6 +15,9 @@ type TaskCountContextType = {
   setSearchedText: (v: string) => void;
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
+  allTasks: Task[];
+  setAllTasks: (tasks: Task[]) => void;
+  getAllTasks: () => Promise<void>;
 };
 
 const TaskCountContext = createContext<TaskCountContextType | undefined>(
@@ -33,11 +37,20 @@ export const TaskCountProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { get } = useApi();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [upcomingCount, setUpcomingCount] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [searchedText, setSearchedText] = useState("");
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+
+  const getAllTasks = async () => {
+    const data = await get<Task[]>("/task");
+    if (data) {
+      setAllTasks(data);
+    }
+  };
 
   return (
     <TaskCountContext.Provider
@@ -52,6 +65,9 @@ export const TaskCountProvider = ({
         setSearchedText,
         currentUser,
         setCurrentUser,
+        allTasks,
+        setAllTasks,
+        getAllTasks,
       }}>
       {children}
     </TaskCountContext.Provider>
